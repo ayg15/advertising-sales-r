@@ -2,6 +2,7 @@
 library(dplyr)
 library(tidyverse)
 library(viridis)
+library(caret)
 
 # The data
 advertising_df <- read.csv("Advertising_Budget_and_Sales.csv", check.names = FALSE)
@@ -13,7 +14,6 @@ column_names <- colnames(advertising_df)
 print(column_names)
 
 # remove the extra unnecessary column
-# advertising_df <- select(advertising_df, -``)
 advertising_df <- advertising_df[, colnames(advertising_df) != ""] 
 head(advertising_df)
 
@@ -54,11 +54,11 @@ ggsave("Newspaper_Ad_Budget_and_Sales.png", plot = p3, width = 6, height = 4, dp
 # heatmap
 corr_matrix <- cor(advertising_df)
 
-# Convert the correlation matrix to a dataframe
+# convert the correlation matrix to a dataframe
 corr_df <- as.data.frame(as.table(corr_matrix))
 names(corr_df) <- c("Var1", "Var2", "Correlation")
 
-# Create the heatmap plot using ggplot2
+# create the heatmap plot using ggplot2
 p4 <- ggplot(corr_df, aes(Var1, Var2, fill = Correlation)) +
   geom_tile(color = "white") +
   geom_text(aes(label = round(Correlation, 3)), color = "black", size = 3) +
@@ -68,3 +68,37 @@ p4 <- ggplot(corr_df, aes(Var1, Var2, fill = Correlation)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 print(p4)
 ggsave("Heatmap.png", plot = p4, width = 6, height = 4, dpi = 300)
+
+# Linear Regression model
+# partition data frame into training and testing sets
+train_indices <- createDataPartition(
+  advertising_df$`Sales ($)`, times=1, p=.8, list=FALSE)
+
+# create training set
+train_df <- advertising_df[train_indices , ]
+
+# create testing set
+test_df  <- advertising_df[-train_indices, ]
+
+# top 5 rows of train and test dataframes
+head(train_df)
+head(test_df)
+
+lm_model <- lm(`Sales ($)` ~ ., data = train_df)
+summary(lm_model)
+
+# predictions on test data
+predictions <- predict(lm_model, newdata = test_df)
+head(predictions)
+
+# model rmse
+rmse_model <- sqrt(mean(lm_model$residuals^2))
+print(paste("Root Mean Squared Error (RMSE) from model:", rmse_model))
+
+# evaluate the model (e.g., calculate RMSE) based on test_df
+rmse <- sqrt(mean((test_df$`Sales ($)` - predictions)^2))
+print(paste("Root Mean Squared Error (RMSE):", rmse))
+
+# r2_score
+r_squared <- summary(lm_model)$r.squared
+print(paste("R-squared:", r_squared))
