@@ -102,3 +102,56 @@ print(paste("Root Mean Squared Error (RMSE):", rmse))
 # r2_score
 r_squared <- summary(lm_model)$r.squared
 print(paste("R-squared:", r_squared))
+
+# get the coefficients
+lm_model_coef <- coef(lm_model)
+print(lm_model_coef)
+
+# Minimization using optim
+# the minimum and maximum bounds for optimization
+min_values <- c(unname(apply(advertising_df, 2, min)))
+print(min_values)
+max_values <- c(unname(1.2 * apply(advertising_df, 2, max)))
+print(max_values)
+
+# define the objective function to be minimized
+objective_function <- function(x) {
+  return (lm_model_coef[1] + (lm_model_coef[2]*x[1]) + 
+            (lm_model_coef[3]*x[2]) + (lm_model_coef[4]*x[3]))
+}
+
+# initial guess
+x0 <- c(0, 0, 0)
+
+# perform minimization
+result <- optim(par = x0, fn = objective_function, method = "L-BFGS-B", 
+                lower = min_values, upper = max_values, control = list(trace=1))
+
+# extract the optimized parameters
+optimized_params <- result$par
+print("Optimized parameters:")
+print(optimized_params)
+
+# print the value of the objective function at the optimum
+print("Value of objective function at optimum:")
+print(result$value)
+
+# define the objective function to be maximized
+objective_function <- function(x) {
+  return (-lm_model_coef[1] - (lm_model_coef[2]*x[1]) - 
+            (lm_model_coef[3]*x[2]) - (lm_model_coef[4]*x[3]))
+}
+
+# perform maximization
+result <- optim(par = x0, fn = objective_function, method = "L-BFGS-B", 
+                lower = min_values, upper = max_values, control = list(trace=1))
+
+# extract the optimized parameters
+optimized_params <- result$par
+print("Optimized parameters:")
+print(optimized_params)
+
+# print the value of the objective function at the optimum
+print("Value of objective function at optimum:")
+print(-result$value)
+
